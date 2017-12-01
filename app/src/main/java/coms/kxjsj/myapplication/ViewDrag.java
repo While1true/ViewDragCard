@@ -5,9 +5,15 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by vange on 2017/12/1.
@@ -18,19 +24,13 @@ public class ViewDrag extends FrameLayout{
     private ViewDragHelper viewDragHelper;
     private ViewDragHelper.Callback callback;
 
-    private View dragedView;
 
-    private View settingView;
+    List<View>allViews=new ArrayList<>();
 
     /**
      * 标记settleCapturedViewAt开始
      */
     private boolean startSetting;
-
-    /**
-     * 视图外是否拦截事件
-     */
-    private boolean canOutTouch=false;
 
     public ViewDrag(@NonNull Context context) {
         this(context,null);
@@ -49,7 +49,7 @@ public class ViewDrag extends FrameLayout{
         callback = new ViewDragHelper.Callback() {
             @Override
             public boolean tryCaptureView(View child, int pointerId) {
-                return true;
+                return child==allViews.get(allViews.size()-1);
             }
 
             @Override
@@ -64,7 +64,6 @@ public class ViewDrag extends FrameLayout{
 
             @Override
             public void onViewCaptured(View capturedChild, int activePointerId) {
-                dragedView=capturedChild;
                 if(settingViewCallBack!=null){
                     settingViewCallBack.captureView(capturedChild);
                 }
@@ -72,15 +71,22 @@ public class ViewDrag extends FrameLayout{
 
             @Override
             public void onViewReleased(View releasedChild, float xvel, float yvel) {
-                dragedView=null;
-                settingView=releasedChild;
                 int left = releasedChild.getLeft();
                 int top = releasedChild.getTop();
                 int measuredWidth = getMeasuredWidth();
-                if(left> measuredWidth /2-releasedChild.getMeasuredWidth()/2){
-                    left= measuredWidth-getPaddingRight()-releasedChild.getMeasuredWidth();
-                }else {
-                    left=0;
+                int measuredHeight = getMeasuredHeight();
+                if(left*measuredHeight<=top*measuredWidth) {
+                    if (left > measuredWidth / 2 - releasedChild.getMeasuredWidth() / 2) {
+                        left = measuredWidth - getPaddingRight() - getPaddingRight();
+                    } else {
+                        left = -releasedChild.getMeasuredWidth();
+                    }
+                }else{
+                    if (top > measuredHeight / 2 - releasedChild.getMeasuredHeight() / 2) {
+                        top = measuredHeight - getPaddingTop() - getPaddingBottom();
+                    } else {
+                        top = -releasedChild.getMeasuredHeight();
+                    }
                 }
                 viewDragHelper.settleCapturedViewAt(left,top);
                 startSetting=true;
@@ -125,33 +131,39 @@ public class ViewDrag extends FrameLayout{
             @Override
             public int clampViewPositionHorizontal(View child, int left, int dx) {
 //                System.out.println("left"+left+"--"+dx);
-                   if(dragedView==null)
-                       return 0;
-                return clampBoundary(left,0);
+                return clampBoundary(child,left,0);
             }
 
             @Override
             public int clampViewPositionVertical(View child, int top, int dy) {
 //                System.out.println("top"+top+"--"+dy);
-                if(dragedView==null)
-                    return 0;
-                return clampBoundary(top,1);
+                return clampBoundary(child,top,1);
             }
         };
         viewDragHelper = ViewDragHelper.create(this, 1, callback);
+        Class clazz=ViewDragHelper.class;
+        try {
+            Field mMaxVelocity = clazz.getDeclaredField("mMaxVelocity");
+            mMaxVelocity.setAccessible(true);
+            mMaxVelocity.setFloat(viewDragHelper,100);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
-    private int clampBoundary(int current,int orentation){
-        if(current<0){
-            current=0;
+    private int clampBoundary(View view,int current,int orentation){
+        if(current<-view.getMeasuredWidth()){
+            current=-view.getMeasuredWidth();
         }
         if(orentation== 0) {
-            int boundsWidth = getMeasuredWidth() - getPaddingLeft() - dragedView.getMeasuredWidth();
+            int boundsWidth = getMeasuredWidth() - getPaddingLeft()-getPaddingRight();
             if (current > boundsWidth) {
                 current = boundsWidth;
             }
         }else{
-            int boundsHeight = getMeasuredHeight() - getPaddingTop() - dragedView.getMeasuredHeight();
+            int boundsHeight = getMeasuredHeight() - getPaddingTop() - getPaddingBottom();
             if (current > boundsHeight) {
                 current = boundsHeight;
             }
@@ -160,21 +172,15 @@ public class ViewDrag extends FrameLayout{
         return current;
     }
 
-    View topChildUnder;
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        topChildUnder = viewDragHelper.findTopChildUnder((int) ev.getX(), (int) ev.getY());
-        System.out.println(topChildUnder==null);
-        if(topChildUnder==null){
-           return super.onInterceptTouchEvent(ev);
-        }
         return viewDragHelper.shouldInterceptTouchEvent(ev);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         viewDragHelper.processTouchEvent(event);
-        return topChildUnder!=null;
+        return true;
     }
     @Override
     public void computeScroll(){
@@ -187,8 +193,18 @@ public class ViewDrag extends FrameLayout{
                 invalidate();
             } else {
                 startSetting=false;
+                View frontview = allViews.get(allViews.size() - 1);
                 if(settingViewCallBack!=null){
-                    settingViewCallBack.endSetting(settingView);
+                    settingViewCallBack.endSetting(frontview);
+                }
+
+                allViews.remove(frontview);
+                allViews.add(0,frontview);
+                removeView(frontview);
+                addView(frontview,0);
+                for (int i = 0; i < allViews.size(); i++) {
+                    allViews.get(i).setTranslationY(-(allViews.size()-i-1)*10);
+//                    allViews.get(i).setScaleX(1f/(allViews.size()-i-1));
                 }
             }
         }
@@ -220,12 +236,20 @@ public class ViewDrag extends FrameLayout{
         void captureView(View view){}
     }
 
-
-    public boolean isCanOutTouch() {
-        return canOutTouch;
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        allViews.clear();
+        for (int i = 0; i < getChildCount(); i++) {
+            allViews.add(getChildAt(i));
+            getChildAt(i).setTranslationY(-(getChildCount()-i-1)*10);
+//            getChildAt(i).setScaleX(1f/(getChildCount()-i-1));
+        }
     }
 
-    public void setCanOutTouch(boolean canOutTouch) {
-        this.canOutTouch = canOutTouch;
+    @Override
+    public void addView(View child, int index, ViewGroup.LayoutParams params) {
+        ((LayoutParams)params).gravity= Gravity.CENTER;
+        super.addView(child, index, params);
     }
 }
