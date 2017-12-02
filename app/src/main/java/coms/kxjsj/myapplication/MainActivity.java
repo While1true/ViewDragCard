@@ -7,20 +7,32 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Toast toast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ViewDrag viewDrag = (ViewDrag) findViewById(R.id.viewDrag);
+        final ViewDrag viewDrag = (ViewDrag) findViewById(R.id.viewDrag);
         viewDrag.setSettingViewCallBack(new ViewDrag.SettingViewCallBack() {
             @Override
             void startSetting(View view) {
-                Toast.makeText(view.getContext(),"动画开始",Toast.LENGTH_SHORT).show();
+                /**
+                 * 刚放手
+                 */
             }
 
             @Override
             void endSetting(View view) {
-                Toast.makeText(view.getContext(),"动画结束",Toast.LENGTH_SHORT).show();
+                /**
+                 * 放手后动画结束
+                 */
+                if(toast==null)
+                toast = Toast.makeText(view.getContext(), "移动到最后了", Toast.LENGTH_LONG);
+                else {
+                    toast.setText("移动到最后了");
+                }
+                toast.show();
             }
         });
     }
