@@ -76,7 +76,7 @@ public class ViewDrag extends FrameLayout{
         removeAllViews();
         attchedView.clear();
         int cachedSize = adapter.getCachedSize();
-        for (int i = currentFront+cachedSize-1; i >=0; i--) {
+        for (int i = currentFront+cachedSize-1; i >=currentFront; i--) {
             View view = adapter.getView(i%adapter.getCount(),null, this);
             attchedView.add(view);
             addView(view);
