@@ -83,7 +83,7 @@ public class ViewDrag extends FrameLayout{
         }
         for (int i = 0; i < attchedView.size(); i++) {
             View view=attchedView.get(i);
-            view.setTranslationY(-(getChildCount()-i-1)*dp2px(10));
+            view.setTranslationY(-(getChildCount()-i-1)*dp2px(30));
             view.setScaleX(1f-0.3f*(getChildCount()-i)/getChildCount());
             view.setScaleY(1f-0.3f*(getChildCount()-i)/getChildCount());
         }
@@ -137,15 +137,16 @@ public class ViewDrag extends FrameLayout{
                     } else {
                         left = -releasedChild.getMeasuredWidth();
                     }
-                    viewDragHelper.settleCapturedViewAt(left, measuredHeight/2- releasedChild.getMeasuredHeight()/2);
                     startSetting = true;
+                    viewDragHelper.settleCapturedViewAt(left, measuredHeight/2- releasedChild.getMeasuredHeight()/2);
                     if (settingViewCallBack != null) {
                         settingViewCallBack.startSetting(releasedChild,currentFront);
                     }
                 }else{
                     releasedChild.setRotation(0);
-                    viewDragHelper.settleCapturedViewAt((measuredWidth- releasedChild.getMeasuredWidth())/2, measuredHeight/2- releasedChild.getMeasuredHeight()/2);
                     startSettingBack=true;
+                    viewDragHelper.settleCapturedViewAt((measuredWidth- releasedChild.getMeasuredWidth())/2, measuredHeight/2- releasedChild.getMeasuredHeight()/2);
+
                 }
                 invalidate();
                 System.out.println("xvel"+xvel+"yvel"+yvel);
@@ -265,8 +266,10 @@ public class ViewDrag extends FrameLayout{
                 View view = adapter.getView((currentFront+attchedView.size()) % adapter.getCount(), frontview, this);
                 attchedView.add(0,view);
                 addView(view,0);
+
                 for (int i = 0; i < attchedView.size(); i++) {
-                    attchedView.get(i).setTranslationY(-(attchedView.size()-i-1)*dp2px(10));
+                    attchedView.get(i).setTranslationY(-(attchedView.size()-i-1)*dp2px(30));
+                    attchedView.get(i).setRotation(0);
                     getChildAt(i).setScaleX(1f-0.3f*(getChildCount()-i)/getChildCount());
                     getChildAt(i).setScaleY(1f-0.3f*(getChildCount()-i)/getChildCount());
                 }

@@ -9,5 +9,8 @@
     android:drawableTop="@mipmap/ic_launcher"
     android:gravity="center"
     android:text="hello"
+    android:drawableRight="@mipmap/ic_launcher_round"
+    android:drawableLeft="@mipmap/ic_launcher"
+    android:drawableBottom="@mipmap/ic_launcher_round"
     android:textColor="#fff"
     android:textSize="30sp" />
