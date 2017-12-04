@@ -268,7 +268,7 @@ public class ViewDrag extends FrameLayout{
                 addView(view,0);
 
                 for (int i = 0; i < attchedView.size(); i++) {
-                    attchedView.get(i).setTranslationY(-(attchedView.size()-i-1)*dp2px(30));
+                    attchedView.get(i).setTranslationY(-(attchedView.size()-i-1)*dp2px(15));
                     attchedView.get(i).setRotation(0);
                     getChildAt(i).setScaleX(1f-0.3f*(getChildCount()-i)/getChildCount());
                     getChildAt(i).setScaleY(1f-0.3f*(getChildCount()-i)/getChildCount());
